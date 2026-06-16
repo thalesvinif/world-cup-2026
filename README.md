@@ -37,10 +37,12 @@ If `API_FOOTBALL_KEY` is set, the script automatically uses API-Football for `le
 
 - `scripts/update_dashboard.py`: one standard-library-only updater.
 - `index.html`: generated self-contained dashboard.
-- `state/state.json`: last-run hash, timestamps, and summary.
-- `cache/`: timestamped fetched JSON responses for debugging parser breakage.
-- `logs/update.log`: one timestamped line per run.
-- `backups/`: previous `index.html` copies, retaining the last 20.
+- `state/state.json`: local last-run hash, timestamps, and summary.
+- `cache/`: local timestamped fetched JSON responses for debugging parser breakage.
+- `logs/update.log`: local timestamped run log.
+- `backups/`: local previous `index.html` copies, retaining the last 20.
+
+The local `state/`, `cache/`, `logs/`, `backups/`, `.vercel/`, and `.env*` paths are ignored by Git and should not be committed. API keys must stay in environment variables only; the updater sends `API_FOOTBALL_KEY` as a request header and does not render it into `index.html`.
 
 ## Scheduling
 
