@@ -46,7 +46,11 @@ The local `state/`, `cache/`, `logs/`, `backups/`, `.vercel/`, and `.env*` paths
 
 ## Scheduling
 
-macOS/Linux cron, hourly:
+Production updates run through GitHub Actions. The workflow in `.github/workflows/update-dashboard.yml` runs hourly and can also be started manually from the GitHub Actions tab. It regenerates `index.html`, commits it only when data changes, and pushes to `main`; Vercel then deploys the updated static dashboard from GitHub.
+
+The default ESPN provider does not require secrets. To use API-Football in production, add `API_FOOTBALL_KEY` as a GitHub Actions repository secret and set the `WORLD_CUP_PROVIDER` repository variable to `api-football`.
+
+For local-only updates, macOS/Linux cron can still run hourly:
 
 ```cron
 0 * * * * cd /Users/thalesviniciusf/Desktop/copa && /usr/bin/env python3 scripts/update_dashboard.py
