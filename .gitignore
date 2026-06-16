@@ -1,0 +1,9 @@
+.vercel/
+backups/
+cache/
+logs/
+state/
+__pycache__/
+*.pyc
+.env
+.env.*

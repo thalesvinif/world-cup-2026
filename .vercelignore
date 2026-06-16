@@ -1,0 +1,7 @@
+backups/
+cache/
+logs/
+scripts/
+state/
+*.pyc
+__pycache__/
