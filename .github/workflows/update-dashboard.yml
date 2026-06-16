@@ -28,7 +28,7 @@ jobs:
 
       - name: Update generated dashboard
         env:
-          TZ: America/New_York
+          TZ: America/Sao_Paulo
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
           WORLD_CUP_PROVIDER: ${{ vars.WORLD_CUP_PROVIDER }}
         run: python3 scripts/update_dashboard.py

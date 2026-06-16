@@ -45,12 +45,12 @@ TOURNAMENT_START = dt.date(2026, 6, 11)
 TOURNAMENT_END = dt.date(2026, 7, 19)
 
 REQUIRED_HEADINGS = [
-    "At a glance",
-    "Completed matches",
-    "Player leaderboards",
-    "Points tables",
-    "Next up",
-    "Groups not started",
+    "Resumo",
+    "Partidas concluídas",
+    "Líderes individuais",
+    "Tabelas de pontos",
+    "Próximos jogos",
+    "Grupos sem estreia",
 ]
 
 GROUPS = {
@@ -154,6 +154,53 @@ FLAGS = {
     "Uruguay": "🇺🇾",
     "Uzbekistan": "🇺🇿",
 }
+
+TEAM_LABELS_PT = {
+    "Australia": "Austrália",
+    "Austria": "Áustria",
+    "Belgium": "Bélgica",
+    "Brazil": "Brasil",
+    "Canada": "Canadá",
+    "Colombia": "Colômbia",
+    "Croatia": "Croácia",
+    "Curacao": "Curaçao",
+    "Czechia": "Tchéquia",
+    "DR Congo": "RD Congo",
+    "Ecuador": "Equador",
+    "Egypt": "Egito",
+    "England": "Inglaterra",
+    "France": "França",
+    "Germany": "Alemanha",
+    "Ghana": "Gana",
+    "Iran": "Irã",
+    "Iraq": "Iraque",
+    "Ivory Coast": "Costa do Marfim",
+    "Japan": "Japão",
+    "Korea Republic": "Coreia do Sul",
+    "Mexico": "México",
+    "Morocco": "Marrocos",
+    "Netherlands": "Países Baixos",
+    "New Zealand": "Nova Zelândia",
+    "Norway": "Noruega",
+    "Panama": "Panamá",
+    "Paraguay": "Paraguai",
+    "Portugal": "Portugal",
+    "Qatar": "Catar",
+    "Saudi Arabia": "Arábia Saudita",
+    "Scotland": "Escócia",
+    "South Africa": "África do Sul",
+    "Spain": "Espanha",
+    "Sweden": "Suécia",
+    "Switzerland": "Suíça",
+    "Tunisia": "Tunísia",
+    "Turkiye": "Turquia",
+    "United States": "Estados Unidos",
+    "Uruguay": "Uruguai",
+    "Uzbekistan": "Uzbequistão",
+}
+
+WEEKDAYS_PT = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+MONTHS_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
 
 
 def utc_now() -> dt.datetime:
@@ -597,15 +644,22 @@ def flag(team: str) -> str:
     return FLAGS.get(team, "🏳️")
 
 
+def team_label(team: str) -> str:
+    return TEAM_LABELS_PT.get(team, team)
+
+
 def format_time(value: str | None, tz: dt.tzinfo) -> str:
     parsed = parse_datetime(value)
     if not parsed:
-        return "TBD"
-    return parsed.astimezone(tz).strftime("%a, %b %-d, %Y %-I:%M %p %Z")
+        return "A definir"
+    local = parsed.astimezone(tz)
+    weekday = WEEKDAYS_PT[local.weekday()]
+    month = MONTHS_PT[local.month - 1]
+    return f"{weekday}, {local.day:02d} {month} {local.year} {local:%H:%M} {local:%Z}"
 
 
 def team_cell(team: str) -> str:
-    return f'<span class="flag">{e(flag(team))}</span><span>{e(team)}</span>'
+    return f'<span class="flag">{e(flag(team))}</span><span>{e(team_label(team))}</span>'
 
 
 def match_local_date(match: dict, tz: dt.tzinfo) -> dt.date | None:
@@ -616,7 +670,7 @@ def match_local_date(match: dict, tz: dt.tzinfo) -> dt.date | None:
 
 
 def format_day_label(day: dt.date) -> str:
-    return day.strftime("%a, %b %-d, %Y")
+    return f"{WEEKDAYS_PT[day.weekday()]}, {day.day:02d} {MONTHS_PT[day.month - 1]} {day.year}"
 
 
 def result_class(match: dict, side: str) -> str:
@@ -644,11 +698,11 @@ def render_dashboard(payload: dict, style: str, tz: dt.tzinfo) -> str:
     stats_html = "".join(
         f'<div class="metric"><span>{e(label)}</span><strong>{e(value)}</strong><small>{e(caption)}</small></div>'
         for label, value, caption in [
-            ("Games played", totals["games_played"], "Final whistles"),
-            ("Goals scored", totals["goals"], "Tournament total"),
-            ("Teams in play", totals["teams"], "With a completed match"),
-            ("Yellow cards", totals["yellow_cards"], "Discipline"),
-            ("Red cards", totals["red_cards"], "Send-offs"),
+            ("Jogos disputados", totals["games_played"], "Apitos finais"),
+            ("Gols marcados", totals["goals"], "Total do torneio"),
+            ("Seleções em jogo", totals["teams"], "Com ao menos uma partida"),
+            ("Cartões amarelos", totals["yellow_cards"], "Disciplina"),
+            ("Cartões vermelhos", totals["red_cards"], "Expulsões"),
         ]
     )
 
@@ -672,7 +726,7 @@ def render_dashboard(payload: dict, style: str, tz: dt.tzinfo) -> str:
             day_rows.append(
                 f"""
                 <article class="match-card">
-                  <div class="match-meta"><span>Group {e(match.get('group', '?'))}</span><time>{e(format_time(match.get('date'), tz))}</time></div>
+                  <div class="match-meta"><span>Grupo {e(match.get('group', '?'))}</span><time>{e(format_time(match.get('date'), tz))}</time></div>
                   <div class="scoreline">
                     <div class="team {result_class(match, 'home')}">{team_cell(match.get('home_team', ''))}</div>
                     <div class="score">{e(match.get('home_score'))}<span>-</span>{e(match.get('away_score'))}</div>
@@ -689,18 +743,18 @@ def render_dashboard(payload: dict, style: str, tz: dt.tzinfo) -> str:
             </div>
             """
         )
-    no_recent = '<p class="empty" id="no-recent-matches">No completed matches for today or yesterday.</p>' if completed and not visible_match_count else ""
-    load_more = '<button class="load-more" type="button" data-load-more>load more</button>' if hidden_day_count else ""
-    completed_html = "\n".join(match_day_groups) + no_recent + load_more if match_day_groups else '<p class="empty">No completed matches parsed yet.</p>'
+    no_recent = '<p class="empty" id="no-recent-matches">Nenhuma partida concluída hoje ou ontem.</p>' if completed and not visible_match_count else ""
+    load_more = '<button class="load-more" type="button" data-load-more>carregar mais</button>' if hidden_day_count else ""
+    completed_html = "\n".join(match_day_groups) + no_recent + load_more if match_day_groups else '<p class="empty">Nenhuma partida concluída processada ainda.</p>'
 
     scorer_rows = "".join(
         f"<tr><td>{e(idx)}</td><td class=\"club\">{team_cell(row['team'])}</td><td>{e(row['player'])}</td><td>{e(row['goals'])}</td><td>{row['avg']:.2f}</td></tr>"
         for idx, row in enumerate(scorers, 1)
-    ) or '<tr><td colspan="5">No scorer data parsed yet.</td></tr>'
+    ) or '<tr><td colspan="5">Nenhum dado de artilharia processado ainda.</td></tr>'
     keeper_rows = "".join(
         f"<tr><td>{e(idx)}</td><td class=\"club\">{team_cell(row['team'])}</td><td>{e(row['player'])}</td><td>{e(row['saves'])}</td><td>{row['avg']:.2f}</td></tr>"
         for idx, row in enumerate(keepers, 1)
-    ) or '<tr><td colspan="5">No goalkeeper save data parsed yet.</td></tr>'
+    ) or '<tr><td colspan="5">Nenhum dado de defesas processado ainda.</td></tr>'
 
     table_html = []
     for group in sorted(standings):
@@ -718,9 +772,9 @@ def render_dashboard(payload: dict, style: str, tz: dt.tzinfo) -> str:
         table_html.append(
             f"""
             <section class="group-table">
-              <div class="table-title"><h3>Group {e(group)}</h3><span>{team_cell(leader['team']) if leader else 'TBD'} leads</span></div>
+              <div class="table-title"><h3>Grupo {e(group)}</h3><span>{team_cell(leader['team']) if leader else 'A definir'} lidera</span></div>
               <table>
-                <thead><tr><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead>
+                <thead><tr><th>Seleção</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th><th>Pts</th></tr></thead>
                 <tbody>{rows}</tbody>
               </table>
             </section>
@@ -732,20 +786,20 @@ def render_dashboard(payload: dict, style: str, tz: dt.tzinfo) -> str:
         <article class="fixture">
           <div>{team_cell(match.get('home_team', ''))}<span class="versus">vs</span>{team_cell(match.get('away_team', ''))}</div>
           <time>{e(format_time(match.get('date'), tz))}</time>
-          <span class="badge">Group {e(match.get('group', '?'))}</span>
+          <span class="badge">Grupo {e(match.get('group', '?'))}</span>
         </article>
         """
         for match in upcoming
-    ) or '<p class="empty">No upcoming fixtures parsed.</p>'
+    ) or '<p class="empty">Nenhum próximo jogo processado.</p>'
 
-    inactive_html = "".join(f"<span>Group {e(group)}</span>" for group in inactive) or "<span>All groups have started.</span>"
+    inactive_html = "".join(f"<span>Grupo {e(group)}</span>" for group in inactive) or "<span>Todos os grupos já começaram.</span>"
 
     return f"""<!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FIFA World Cup 2026 Results Dashboard</title>
+  <title>Copa do Mundo FIFA 2026 - Painel de Resultados</title>
   <style>
 {style}
   </style>
@@ -753,50 +807,50 @@ def render_dashboard(payload: dict, style: str, tz: dt.tzinfo) -> str:
 <body>
   <header class="site-header">
     <div class="hero-copy">
-      <p class="eyebrow">FIFA World Cup 2026</p>
-      <h1>Results Dashboard</h1>
-      <p class="dek">Match results, tables and player leaders in one live tournament board.</p>
+      <p class="eyebrow">Copa do Mundo FIFA 2026</p>
+      <h1>Painel de Resultados</h1>
+      <p class="dek">Resultados de jogos, tabelas e líderes individuais em um painel ao vivo do torneio.</p>
     </div>
-    <div class="updated"><span>Last updated</span><strong>{e(updated)}</strong></div>
+    <div class="updated"><span>Última atualização</span><strong>{e(updated)}</strong></div>
   </header>
 
   <main>
     <section class="section-block">
-      <div class="section-heading"><h2>At a glance</h2><p>Current tournament totals from parsed fixtures.</p></div>
+      <div class="section-heading"><h2>Resumo</h2><p>Totais do torneio a partir das partidas processadas.</p></div>
       <div class="metrics">{stats_html}</div>
     </section>
 
     <section class="section-block">
-      <div class="section-heading"><h2>Completed matches</h2><p>Latest finished games, ordered by kickoff time.</p></div>
+      <div class="section-heading"><h2>Partidas concluídas</h2><p>Últimos jogos finalizados, ordenados pelo horário de início.</p></div>
       <div class="matches">{completed_html}</div>
     </section>
 
     <section class="section-block">
-      <div class="section-heading"><h2>Player leaderboards</h2><p>Top individual output from available event data.</p></div>
+      <div class="section-heading"><h2>Líderes individuais</h2><p>Principais desempenhos individuais a partir dos dados disponíveis.</p></div>
       <div class="leaderboards">
         <div>
-          <h3>Top goal scorers</h3>
-          <table><thead><tr><th>#</th><th>Team</th><th>Player</th><th>G</th><th>Avg</th></tr></thead><tbody>{scorer_rows}</tbody></table>
+          <h3>Artilheiros</h3>
+          <table><thead><tr><th>#</th><th>Seleção</th><th>Jogador</th><th>G</th><th>Média</th></tr></thead><tbody>{scorer_rows}</tbody></table>
         </div>
         <div>
-          <h3>Top goalkeepers by saves</h3>
-          <table><thead><tr><th>#</th><th>Team</th><th>Player</th><th>Saves</th><th>Avg</th></tr></thead><tbody>{keeper_rows}</tbody></table>
+          <h3>Goleiros por defesas</h3>
+          <table><thead><tr><th>#</th><th>Seleção</th><th>Jogador</th><th>Defesas</th><th>Média</th></tr></thead><tbody>{keeper_rows}</tbody></table>
         </div>
       </div>
     </section>
 
     <section class="section-block">
-      <div class="section-heading"><h2>Points tables</h2><p>Group standings sorted by points, goal difference and goals scored.</p></div>
+      <div class="section-heading"><h2>Tabelas de pontos</h2><p>Classificação dos grupos ordenada por pontos, saldo de gols e gols marcados.</p></div>
       <div class="tables">{''.join(table_html)}</div>
     </section>
 
     <section class="section-block">
-      <div class="section-heading"><h2>Next up</h2><p>Upcoming fixtures from the schedule feed.</p></div>
+      <div class="section-heading"><h2>Próximos jogos</h2><p>Partidas futuras a partir da tabela processada.</p></div>
       <div class="fixtures">{next_rows}</div>
     </section>
 
     <section class="section-block">
-      <div class="section-heading"><h2>Groups not started</h2><p>Groups still waiting for their first completed result.</p></div>
+      <div class="section-heading"><h2>Grupos sem estreia</h2><p>Grupos que ainda aguardam o primeiro resultado concluído.</p></div>
       <div class="chips">{inactive_html}</div>
     </section>
   </main>
